@@ -3,7 +3,18 @@ package database.enums;
 import java.time.Period;
 
 public enum RecurringRate {
-    WEEKLY, BI_WEEKLY, MONTHLY, QUARTERLY, YEARLY;
+    WEEKLY, BI_WEEKLY{
+        @Override
+        public String toString() {
+            return "bi-weekly";
+        }
+    }, MONTHLY, QUARTERLY, YEARLY;
+
+    @Override
+    public String toString() {
+        return super.toString().toLowerCase();
+    }
+
     public Period getInterval(){
         return switch (this){
             case WEEKLY -> Period.ofWeeks(1);
