@@ -1,15 +1,15 @@
 package database;
 
+import database.enums.RecurringRate;
 import database.enums.TransactionType;
 import database.records.AccountRow;
 import database.records.RecurringTransactionRow;
 import database.records.TableToRecordAPI;
 import database.records.TransactionRow;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -183,7 +183,7 @@ public class SqlManager {
         updateAccountBalance(transaction.acc_id(), transaction.amount(), opposite);
         updateAccountBalance(transaction.acc_id(), newAmount, transaction.type());
 
-        String sql = "UPDATE user_transaction SET amount = ? WHERE id = ?";
+        String sql = "UPDATE user_transaction SET amount = ? WHERE id = ?;";
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setFloat(1, newAmount);
             ps.setInt(2, tran_id);
@@ -195,7 +195,7 @@ public class SqlManager {
     }
 
     public void setRecurringTransactionAmount(int rec_id, float newAmount){
-        String sql = "UPDATE recurring_transaction SET amount = ? WHERE id = ?";
+        String sql = "UPDATE recurring_transaction SET amount = ? WHERE id = ?;";
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setFloat(1, newAmount);
             ps.setInt(2, rec_id);
@@ -203,6 +203,90 @@ public class SqlManager {
         } catch (SQLException e){
             e.fillInStackTrace();
             throw new RuntimeException("Fail to update transaction amount");
+        }
+    }
+
+    public int addAccount(String name, String card, String bank){
+        String sql = """
+                INSERT INTO account (balance, name, card, bank)
+                VALUES (?, ?, ?, ?)
+                RETURNING id;""";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setFloat(1, 0);
+            ps.setString(2, name);
+            ps.setString(3, card);
+            ps.setString(4, bank);
+            ps.execute();
+
+            ResultSet rs = ps.getResultSet();
+            rs.next();
+            return rs.getInt("id");
+        } catch (SQLException e){
+            e.fillInStackTrace();
+            throw new RuntimeException("Fail to insert new account");
+        }
+    }
+
+    public int addTransaction(int acc_id, LocalDate date, String name, TransactionType type, float amount){
+        double epoch = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+        String transType = type.toString();
+
+        String sql = """
+                INSERT INTO user_transaction (acc_id, date, name, type, amount)
+                VALUES (?, ?, ?, ?, ?)
+                RETURNING id;""";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, acc_id);
+            ps.setDouble(2, epoch);
+            ps.setString(3, name);
+            ps.setString(4, transType);
+            ps.setFloat(5, amount);
+
+            ps.execute();
+            ResultSet rs = ps.getResultSet();
+            rs.next();
+            int trans_id = rs.getInt("id");
+
+            updateAccountBalance(acc_id, amount, type);
+            return trans_id;
+        } catch (SQLException e){
+            e.fillInStackTrace();
+            throw new RuntimeException("Fail to insert new transaction");
+        }
+    }
+
+    public int addRecurringTransaction(int acc_id, LocalDate startDate, String name, TransactionType type, RecurringRate rate, float amount){
+        double startEpoch = startDate.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+        String transType = type.toString();
+        String recurRate = rate.toString();
+
+        String sql = """
+                INSERT INTO recurring_transaction (acc_id, start_date, name, type, recurring_rate, amount)
+                VALUES (?, ?, ?, ?, ?)
+                RETURNING id;""";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, acc_id);
+            ps.setDouble(2, startEpoch);
+            ps.setString(3, name);
+            ps.setString(4, transType);
+            ps.setString(5, recurRate);
+            ps.setFloat(6, amount);
+
+            ps.execute();
+            ResultSet rs = ps.getResultSet();
+            rs.next();
+            int trans_id = rs.getInt("id");
+
+            // Updating database on recurring transactions since start date
+            LocalDate workingDate = startDate;
+            while (workingDate.isBefore(LocalDate.now())){
+                addTransaction(acc_id, workingDate, name, type, amount);
+                workingDate = workingDate.plus(rate.getInterval());
+            }
+            return trans_id;
+        } catch (SQLException e){
+            e.fillInStackTrace();
+            throw new RuntimeException("Fail to insert new transaction");
         }
     }
 }
