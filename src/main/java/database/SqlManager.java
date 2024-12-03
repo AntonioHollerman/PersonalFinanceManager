@@ -129,6 +129,36 @@ public class SqlManager {
         }
     }
 
+    private void updateAccountBalance(int acc_id, float amount, TransactionType type){
+        String sql = """
+                UPDATE account
+                SET balance = balance %s ?
+                WHERE id = ?;""";
+        sql = String.format(sql, type == TransactionType.DEPOSIT ? "+" : "-");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setFloat(1, amount);
+            ps.setInt(2, acc_id);
+            ps.execute();
+        } catch (SQLException e){
+            e.fillInStackTrace();
+            throw new RuntimeException("Fail to update account balance");
+        }
+    }
+
+    private void updateLastTimeTransacted(int rec_id, LocalDate lastTimeTransacted){
+        double epoch = lastTimeTransacted.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+        String sql = """
+                UPDATE recurring_transaction SET last_time_transacted = ? WHERE id = ?;""";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setDouble(1, epoch);
+            ps.setInt(2, rec_id);
+        } catch (SQLException e){
+            e.fillInStackTrace();
+            throw new RuntimeException("Fail to Update last recurring transaction");
+        }
+    }
+
     public void setAccountName(int acc_id, String newValue){
         updateTableInfo(acc_id, newValue, "name", "account");
     }
@@ -157,23 +187,6 @@ public class SqlManager {
 
     public void setRecurringTransactionRate(int rec_id, String newValue){
         updateTableInfo(rec_id, newValue, "recurring_rate", "recurring_transaction");
-    }
-
-    private void updateAccountBalance(int acc_id, float amount, TransactionType type){
-        String sql = """
-                UPDATE account
-                SET balance = balance %s ?
-                WHERE id = ?;""";
-        sql = String.format(sql, type == TransactionType.DEPOSIT ? "+" : "-");
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)){
-            ps.setFloat(1, amount);
-            ps.setInt(2, acc_id);
-            ps.execute();
-        } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to update account balance");
-        }
     }
 
     public void setTransactionAmount(int tran_id, float newAmount){
