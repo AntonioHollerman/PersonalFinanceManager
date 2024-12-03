@@ -326,4 +326,44 @@ public class SqlManager {
             }
         }
     }
+
+    public void deleteAccount(int acc_id){
+        String sql = """
+                DELETE account WHERE id = ?;
+                DELETE recurring_transaction WHERE acc_id = ?;
+                DELETE user_transaction WHERE acc_id = ?""";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, acc_id);
+            ps.setInt(2, acc_id);
+            ps.setInt(3, acc_id);
+            ps.execute();
+        } catch (SQLException e){
+            throw new RuntimeException("Fail to delete account", e);
+        }
+    }
+
+    public void deleteTransaction(int tran_id){
+        TransactionRow transaction = getTransaction(tran_id);
+        TransactionType opposite = transaction.type() == TransactionType.DEPOSIT ?
+                TransactionType.WITHDRAW : TransactionType.DEPOSIT;
+        String sql = "DELETE user_transaction WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, tran_id);
+            ps.execute();
+        } catch (SQLException e){
+            throw new RuntimeException("fail to delete transaction", e);
+        }
+        updateAccountBalance(transaction.acc_id(), transaction.amount(), opposite);
+    }
+
+    public void deleteRecurringTransaction(int rec_id){
+        String sql = "DELETE recurring_transaction WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
+            ps.setInt(1, rec_id);
+            ps.execute();
+        } catch (SQLException e){
+            throw new RuntimeException("Fail to delete recurring transaction", e);
+        }
+    }
 }
