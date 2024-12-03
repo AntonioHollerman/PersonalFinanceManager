@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SqlManager {
+    public static final SqlManager DB_CONNECTION= new SqlManager();
+
     private final Connection conn;
     protected SqlManager() {
         try {
