@@ -8,19 +8,23 @@ import database.records.TableToRecordAPI;
 import database.records.TransactionRow;
 
 import java.sql.*;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SqlManager {
     private final Connection conn;
     protected SqlManager() {
         try {
-            conn = DriverManager.getConnection("jdbc:sqlite:C:\\JavaProjects\\PersonalFinanceManager\\resources\\finance.db");
+            conn = DriverManager.getConnection("jdbc:sqlite:C:\\JavaProjects\\PersonalFinanceManager\\src\\main\\resources\\finance.db");
             createTables();
-        } catch (SQLException ignore){
-            throw new RuntimeException("Fail to connect to database");
+        } catch (SQLException e){
+            
+            throw new RuntimeException("Fail to connect to database", e);
         }
     }
     public void createTables() {
@@ -39,7 +43,8 @@ public class SqlManager {
                 name TEXT NOT NULL,
                 type TEXT NOT NULL,
                 recurring_rate TEXT NOT NULL,
-                amount REAL NOT NULL
+                amount REAL NOT NULL,
+                last_time_transacted REAL
             );
             CREATE TABLE IF NOT EXISTS user_transaction(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,13 +52,14 @@ public class SqlManager {
                 date REAL NOT NULL,
                 name TEXT,
                 type TEXT,
-                amount REAL NOT NULL
+                amount REAL NOT NULL,
+                recurring BOOLEAN
             );""";
         try (PreparedStatement ps = conn.prepareStatement(tables)){
             ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Failed to create tables");
+            
+            throw new RuntimeException("Failed to create tables", e);
         }
     }
     public List<AccountRow> getAccounts(){
@@ -62,12 +68,12 @@ public class SqlManager {
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             return TableToRecordAPI.toAccounts(ps.executeQuery());
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to get accounts");
+            
+            throw new RuntimeException("Fail to get accounts", e);
         }
     }
 
-    public List<TransactionRow> getTransactions(int[] acc_ids){
+    public List<TransactionRow> getTransactions(int... acc_ids){
         StringBuilder sql = new StringBuilder("""
                 SELECT * FROM user_transaction WHERE acc_id IN (""");
         for (int i=0; i < acc_ids.length; i++){
@@ -78,11 +84,12 @@ public class SqlManager {
             }
         }
 
-        try (PreparedStatement ps = conn.prepareStatement(sql.toString())){
+        String statement = acc_ids.length > 0 ? sql.toString() : "SELECT * FROM user_transaction";
+        try (PreparedStatement ps = conn.prepareStatement(statement)){
             return TableToRecordAPI.toTransactions(ps.executeQuery());
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to get transactions");
+            
+            throw new RuntimeException("Fail to get transactions", e);
         }
     }
 
@@ -92,12 +99,12 @@ public class SqlManager {
             ps.setInt(1, tran_id);
             return TableToRecordAPI.toTransactions(ps.executeQuery()).get(0);
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to get transaction id: " + tran_id);
+            
+            throw new RuntimeException("Fail to get transaction id: " + tran_id, e);
         }
     }
 
-    public List<RecurringTransactionRow> getRecurringTransactions(int[] acc_ids){
+    public List<RecurringTransactionRow> getRecurringTransactions(int... acc_ids){
         StringBuilder sql = new StringBuilder("""
                 SELECT * FROM recurring_transaction WHERE acc_id IN (""");
         for (int i=0; i < acc_ids.length; i++){
@@ -108,11 +115,12 @@ public class SqlManager {
             }
         }
 
-        try (PreparedStatement ps = conn.prepareStatement(sql.toString())){
+        String statement = acc_ids.length > 0 ? sql.toString() : "SELECT * FROM recurring_transaction";
+        try (PreparedStatement ps = conn.prepareStatement(statement)){
             return TableToRecordAPI.toRecurringTransactions(ps.executeQuery());
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to get recurring transactions");
+            
+            throw new RuntimeException("Fail to get recurring transactions", e);
         }
     }
 
@@ -124,8 +132,8 @@ public class SqlManager {
             ps.setInt(2, id);
             ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to update Account Info");
+            
+            throw new RuntimeException("Fail to update Account Info", e);
         }
     }
 
@@ -135,14 +143,12 @@ public class SqlManager {
                 SET balance = balance %s ?
                 WHERE id = ?;""";
         sql = String.format(sql, type == TransactionType.DEPOSIT ? "+" : "-");
-
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setFloat(1, amount);
             ps.setInt(2, acc_id);
             ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to update account balance");
+            throw new RuntimeException("Fail to update account balance", e);
         }
     }
 
@@ -153,9 +159,10 @@ public class SqlManager {
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setDouble(1, epoch);
             ps.setInt(2, rec_id);
+            ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to Update last recurring transaction");
+            
+            throw new RuntimeException("Fail to Update last recurring transaction", e);
         }
     }
 
@@ -202,8 +209,8 @@ public class SqlManager {
             ps.setInt(2, tran_id);
             ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to update transaction amount");
+            
+            throw new RuntimeException("Fail to update transaction amount", e);
         }
     }
 
@@ -214,8 +221,8 @@ public class SqlManager {
             ps.setInt(2, rec_id);
             ps.execute();
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to update transaction amount");
+            
+            throw new RuntimeException("Fail to update transaction amount", e);
         }
     }
 
@@ -235,18 +242,19 @@ public class SqlManager {
             rs.next();
             return rs.getInt("id");
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to insert new account");
+            
+            throw new RuntimeException("Fail to insert new account", e);
         }
     }
 
-    public int addTransaction(int acc_id, LocalDate date, String name, TransactionType type, float amount){
+    public int addTransaction(int acc_id, LocalDate date, String name, TransactionType type, float amount, boolean recurring){
         double epoch = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
         String transType = type.toString();
+        int trans_id;
 
         String sql = """
-                INSERT INTO user_transaction (acc_id, date, name, type, amount)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO user_transaction (acc_id, date, name, type, amount, recurring)
+                VALUES (?, ?, ?, ?, ?, ?)
                 RETURNING id;""";
         try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setInt(1, acc_id);
@@ -254,21 +262,23 @@ public class SqlManager {
             ps.setString(3, name);
             ps.setString(4, transType);
             ps.setFloat(5, amount);
+            ps.setBoolean(6, recurring);
 
             ps.execute();
             ResultSet rs = ps.getResultSet();
             rs.next();
-            int trans_id = rs.getInt("id");
+            trans_id = rs.getInt("id");
 
-            updateAccountBalance(acc_id, amount, type);
-            return trans_id;
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to insert new transaction");
+            
+            throw new RuntimeException("Fail to insert new transaction", e);
         }
+        updateAccountBalance(acc_id, amount, type);
+        return trans_id;
     }
 
     public int addRecurringTransaction(int acc_id, LocalDate startDate, String name, TransactionType type, RecurringRate rate, float amount){
+        int rec_id;
         double startEpoch = startDate.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
         String transType = type.toString();
         String recurRate = rate.toString();
@@ -288,18 +298,32 @@ public class SqlManager {
             ps.execute();
             ResultSet rs = ps.getResultSet();
             rs.next();
-            int trans_id = rs.getInt("id");
-
-            // Updating database on recurring transactions since start date
-            LocalDate workingDate = startDate;
-            while (workingDate.isBefore(LocalDate.now())){
-                addTransaction(acc_id, workingDate, name, type, amount);
-                workingDate = workingDate.plus(rate.getInterval());
-            }
-            return trans_id;
+            rec_id = rs.getInt("id");
         } catch (SQLException e){
-            e.fillInStackTrace();
-            throw new RuntimeException("Fail to insert new transaction");
+            
+            throw new RuntimeException("Fail to insert new transaction", e);
+        }
+        // Updating database on recurring transactions since start date
+        LocalDate workingDate = startDate;
+        while (workingDate.isBefore(LocalDate.now())){
+            addTransaction(acc_id, workingDate, name, type, amount, true);
+            updateLastTimeTransacted(rec_id, workingDate);
+            workingDate = workingDate.plus(rate.getInterval());
+        }
+        return rec_id;
+    }
+
+    public void checkRecurringTransactions(){
+        for (RecurringTransactionRow row : getRecurringTransactions()){
+            LocalDate lastTransaction = Instant.ofEpochSecond((long) row.lastTimeTransacted())
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate();
+            LocalDate nextTransaction = lastTransaction.plus(row.recurringRate().getInterval());
+            while (nextTransaction.isBefore(LocalDate.now())){
+                addTransaction(row.acc_id(), nextTransaction, row.name(), row.type(), row.amount(), true);
+                updateLastTimeTransacted(row.acc_id(), nextTransaction);
+                nextTransaction = nextTransaction.plus(row.recurringRate().getInterval());
+            }
         }
     }
 }

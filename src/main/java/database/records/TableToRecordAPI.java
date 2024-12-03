@@ -39,7 +39,8 @@ public class TableToRecordAPI {
                         rs.getDouble("date"),
                         rs.getString("name"),
                         type,
-                        rs.getFloat("amount")
+                        rs.getFloat("amount"),
+                        rs.getBoolean("recurring")
                 ));
             }
         }
@@ -67,7 +68,8 @@ public class TableToRecordAPI {
                         rs.getString("name"),
                         type,
                         rate,
-                        rs.getFloat("amount")
+                        rs.getFloat("amount"),
+                        rs.getDouble("last_time_transacted")
                 ));
             }
         }
