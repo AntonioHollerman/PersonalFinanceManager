@@ -34,6 +34,7 @@ public class TableToRecordAPI {
                 TransactionType type = rs.getString("type").equals("withdraw") ?
                         TransactionType.WITHDRAW : TransactionType.DEPOSIT;
                 rows.add(new TransactionRow(
+                        rs.getInt("id"),
                         rs.getInt("acc_id"),
                         rs.getDouble("date"),
                         rs.getString("name"),
@@ -60,6 +61,7 @@ public class TableToRecordAPI {
                     default -> throw new SQLException("Fail to get recurring rate");
                 };
                 rows.add(new RecurringTransactionRow(
+                        rs.getInt("id"),
                         rs.getInt("acc_id"),
                         rs.getDouble("start_date"),
                         rs.getString("name"),
