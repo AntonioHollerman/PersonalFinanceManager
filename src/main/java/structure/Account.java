@@ -151,7 +151,7 @@ public class Account {
      * @return the account balance.
      */
     public float getBalance() {
-        return dbConn.getAccount(id).balance();
+        return Math.round(dbConn.getAccount(id).balance() * 100) / 100.0f;
     }
 
     /**

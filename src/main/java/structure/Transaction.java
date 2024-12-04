@@ -93,12 +93,12 @@ public class Transaction {
     }
 
     /**
-     * Retrieves the amount involved in the transaction.
+     * Retrieves the amount involved in the transaction, rounded to two decimal places.
      *
-     * @return the transaction amount.
+     * @return the transaction amount rounded to two decimal places.
      */
     public float getAmount() {
-        return amount;
+        return Math.round(amount * 100.0f) / 100.0f;
     }
 
     /**
