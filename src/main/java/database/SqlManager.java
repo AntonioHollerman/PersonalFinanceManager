@@ -97,12 +97,30 @@ public class SqlManager {
     }
 
     /**
+     * Retrieves a single account from the database.
+     *
+     * @return A {@link AccountRow} object representing the account.
+     */
+    public AccountRow getAccount(int acc_id) {
+        String sql = "SELECT * FROM account WHERE id = ?;";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, acc_id);
+            return TableToRecordAPI.toAccounts(ps.executeQuery()).get(0);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to retrieve accounts", e);
+        }
+    }
+
+    /**
      * Retrieves all transactions for specific account IDs.
      *
      * @param acc_ids The account IDs to filter transactions by.
      * @return A list of {@link TransactionRow} objects representing the transactions.
      */
     public List<TransactionRow> getTransactions(int... acc_ids) {
+
+        // Builds SQL command so that we have set functionality
+        // Wish to use ANY() but SQLite fail to have that behavior
         StringBuilder sql = new StringBuilder("SELECT * FROM user_transaction WHERE acc_id IN (");
         for (int i = 0; i < acc_ids.length; i++) {
             sql.append(acc_ids[i]);
@@ -326,6 +344,33 @@ public class SqlManager {
             throw new RuntimeException("Failed to update transaction amount", e);
         }
     }
+
+    /**
+     * Updates the date of a specific transaction in the database.
+     *
+     * @param tran_id The ID of the transaction to update.
+     * @param date    The new date to set for the transaction.
+     */
+    public void setTransactionDate(int tran_id, LocalDate date) {
+        // Convert the LocalDate to epoch time (seconds since 1970-01-01) for database storage
+        double epoch = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+
+        // SQL query to update the transaction date
+        String sql = "UPDATE user_transaction SET date = ? WHERE id = ?;";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            // Bind the epoch date and transaction ID to the prepared statement
+            ps.setDouble(1, epoch); // Set the date as epoch time
+            ps.setInt(2, tran_id);  // Set the transaction ID
+
+            // Execute the update statement
+            ps.execute();
+        } catch (SQLException e) {
+            // Handle SQL errors by throwing a runtime exception with a meaningful message
+            throw new RuntimeException("Failed to set transaction date for ID: " + tran_id, e);
+        }
+    }
+
 
     /**
      * Updates the amount of a specific recurring transaction.
