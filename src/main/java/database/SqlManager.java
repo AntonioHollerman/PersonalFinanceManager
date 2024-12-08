@@ -7,6 +7,8 @@ import database.records.RecurringTransactionRow;
 import database.records.TableToRecordAPI;
 import database.records.TransactionRow;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.sql.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -21,7 +23,7 @@ import java.util.List;
  * Includes operations for creating, reading, updating, and deleting accounts, transactions,
  * and recurring transactions.
  */
-public class SqlManager {
+public class SqlManager implements Closeable {
 
     /**
      * Singleton instance of the database manager.
@@ -604,6 +606,28 @@ public class SqlManager {
             ps.execute();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to delete recurring transaction with ID: " + rec_id, e);
+        }
+    }
+
+    /**
+     * Closes this stream and releases any system resources associated
+     * with it. If the stream is already closed then invoking this
+     * method has no effect.
+     *
+     * <p> As noted in {@link AutoCloseable#close()}, cases where the
+     * close may fail require careful attention. It is strongly advised
+     * to relinquish the underlying resources and to internally
+     * <em>mark</em> the {@code Closeable} as closed, prior to throwing
+     * the {@code IOException}.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    public void close() throws IOException {
+        try {
+            conn.close();
+        } catch (SQLException e){
+            throw new RuntimeException("Fail to close data base", e);
         }
     }
 }
