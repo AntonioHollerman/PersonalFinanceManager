@@ -9,4 +9,6 @@ module gui.personalfinancemanager {
 
     opens gui to javafx.fxml;
     exports gui;
+    exports gui.controller;
+    opens gui.controller to javafx.fxml;
 }
