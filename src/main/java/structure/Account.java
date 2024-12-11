@@ -57,6 +57,19 @@ public class Account {
     }
 
     /**
+     *
+     * @return Array os all accounts in the database
+     */
+    public static Account[] getAccounts(){
+        List<AccountRow> rows = dbConn.getAccounts();
+        Account[] accounts = new Account[rows.size()];
+
+        for (int i=0; i < rows.size(); i++){
+            accounts[i] = new Account(rows.get(i));
+        }
+        return accounts;
+    }
+    /**
      * Creates and returns a new Account instance, adding it to the database.
      *
      * @param name the name of the account.
