@@ -8,7 +8,9 @@ module gui.personalfinancemanager {
     requires eu.hansolo.tilesfx;
 
     opens gui to javafx.fxml;
+    opens gui.controller to javafx.fxml;
+
     exports gui;
     exports gui.controller;
-    opens gui.controller to javafx.fxml;
+    exports structure;
 }
