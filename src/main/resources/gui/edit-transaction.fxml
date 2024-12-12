@@ -14,6 +14,9 @@
 <?import javafx.scene.text.Font?>
 
 
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+<?import javafx.scene.layout.StackPane?>
 <VBox alignment="TOP_CENTER" prefHeight="210.0" prefWidth="347.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controller.EditTransactionController">
    <children>
       <Label fx:id="titleLabel" text="New Transaction">
@@ -43,7 +46,14 @@
                   <Insets left="10.0" />
                </GridPane.margin>
             </Label>
-            <ComboBox fx:id="transactionType" prefWidth="150.0" GridPane.columnIndex="1" />
+            <ComboBox fx:id="transactionType" prefWidth="150.0" GridPane.columnIndex="1">
+               <items>
+                  <FXCollections fx:factory="observableArrayList">
+                     <String fx:value="withdraw"/>
+                     <String fx:value="deposit"/>
+                  </FXCollections>
+               </items>
+            </ComboBox>
             <Label text="Date: " GridPane.rowIndex="1">
                <font>
                   <Font size="14.0" />
