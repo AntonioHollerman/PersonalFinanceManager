@@ -1,5 +1,5 @@
 package gui.controller;
-// TODO: Preferred height start at 35 for ScrollPane, add 35 for up to 6 rows
+// TODO: When adding new row all columns labels must have a padding of 10
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -7,8 +7,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
 
 public class HomeController {
-    @FXML
-    private ScrollPane accountsScrollPane;
 
     @FXML
     private GridPane accountsGrid;
