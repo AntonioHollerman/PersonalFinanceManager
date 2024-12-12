@@ -1,7 +1,6 @@
 package gui;
 
 import gui.controller.EditAccountController;
-import gui.controller.EditRecurringTransactionController;
 import gui.controller.EditTransactionController;
 import gui.controller.TransactionsController;
 import javafx.fxml.FXMLLoader;
