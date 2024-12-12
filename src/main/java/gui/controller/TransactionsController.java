@@ -1,6 +1,7 @@
 package gui.controller;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.layout.GridPane;
 import structure.Account;
 
@@ -8,9 +9,13 @@ import structure.Account;
 public class TransactionsController {
 
     @FXML
-    private GridPane transactionsGrid;
+    public ComboBox<String> transactionsFilter;
     @FXML
-    private GridPane recurringTransactionsGrid;
+    public ComboBox<String> recurringTransactionsFilter;
+    @FXML
+    public GridPane transactionsGrid;
+    @FXML
+    public GridPane recurringTransactionsGrid;
 
     @FXML
     public void homeButton(){

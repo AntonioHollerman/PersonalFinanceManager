@@ -137,7 +137,7 @@
                               <Insets bottom="20.0" left="10.0" />
                            </HBox.margin>
                         </Label>
-                        <ComboBox onAction="#swapFilter" prefWidth="150.0" promptText="None" HBox.hgrow="NEVER">
+                        <ComboBox fx:id="transactionsFilter" onAction="#swapFilter" prefWidth="150.0" promptText="None" HBox.hgrow="NEVER">
                            <HBox.margin>
                               <Insets bottom="20.0" />
                            </HBox.margin>
@@ -244,7 +244,7 @@
                               <Insets bottom="20.0" left="10.0" />
                            </HBox.margin>
                         </Label>
-                        <ComboBox onAction="#swapFilter" prefWidth="150.0" promptText="None" value="None" HBox.hgrow="NEVER">
+                        <ComboBox fx:id="recurringTransactionsFilter" onAction="#swapFilter" prefWidth="150.0" promptText="None" value="None" HBox.hgrow="NEVER">
                            <HBox.margin>
                               <Insets bottom="20.0" />
                            </HBox.margin>
